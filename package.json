@@ -20,6 +20,7 @@
   "dependencies": {
     "@solana/web3.js": "^1.89.1",
     "bip39": "^3.1.0",
+    "buffer": "^6.0.3",
     "crypto-js": "^4.2.0",
     "dotenv": "^16.4.7",
     "ethers": "^6.10.0",
