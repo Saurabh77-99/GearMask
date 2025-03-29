@@ -1,25 +1,55 @@
-// Network RPC URLs
-export const RPC_URLS = {
+export const NETWORKS = {
   ethereum: {
-    mainnet: process.env.ETHEREUM_MAINNET_RPC || 'https://eth-mainnet.g.alchemy.com/v2/aTStryPcLTWuKHVWG1b0f2XKeb41eExW',
-    sepolia: process.env.ETHEREUM_SEPOLIA_RPC || 'https://eth-sepolia.g.alchemy.com/v2/aTStryPcLTWuKHVWG1b0f2XKeb41eExW'
+    mainnet: {
+      name: 'Ethereum Mainnet',
+      symbol: 'ETH',
+      chainId: '1',
+      rpcUrl: 'https://eth-mainnet.g.alchemy.com/v2/aTStryPcLTWuKHVWG1b0f2XKeb41eExW',
+      blockExplorer: 'https://etherscan.io'
+    },
+    sepolia: {
+      name: 'Sepolia Testnet',
+      symbol: 'ETH',
+      chainId: '11155111',
+      rpcUrl: 'https://eth-sepolia.g.alchemy.com/v2/aTStryPcLTWuKHVWG1b0f2XKeb41eExW',
+      blockExplorer: 'https://sepolia.etherscan.io'
+    }
   },
   solana: {
-    mainnet: process.env.SOLANA_MAINNET_RPC || 'https://solana-mainnet.g.alchemy.com/v2/UnTzGIuP-ttv3tcge5iF4vIpehPHWT1h',
-    devnet: process.env.SOLANA_DEVNET_RPC || 'https://solana-devnet.g.alchemy.com/v2/UnTzGIuP-ttv3tcge5iF4vIpehPHWT1h'
+    mainnet: {
+      name: 'Solana Mainnet',
+      symbol: 'SOL',
+      rpcUrl: 'https://solana-mainnet.g.alchemy.com/v2/UnTzGIuP-ttv3tcge5iF4vIpehPHWT1h',
+      blockExplorer: 'https://explorer.solana.com'
+    },
+    testnet: {
+      name: 'Solana Testnet',
+      symbol: 'SOL',
+      rpcUrl:"https://solana-devnet.g.alchemy.com/v2/UnTzGIuP-ttv3tcge5iF4vIpehPHWT1h",
+      endpoint: 'https://api.testnet.solana.com',
+      blockExplorer: 'https://explorer.solana.com/?cluster=testnet'
+    }
   }
 };
 
-// Default networks
 export const DEFAULT_NETWORKS = {
-  ethereum: 'mainnet',
-  solana: 'mainnet'
+  ethereum: 'sepolia',  // Set default to Sepolia for development
+  solana: 'testnet'
 };
 
-// Network chain IDs
-export const CHAIN_IDS = {
+// ... rest of the config file ... 
+
+export const API_KEYS = {
+  alchemy: 'aTStryPcLTWuKHVWG1b0f2XKeb41eExW',
+  etherscan: 'FYSGSK2FU9DS8S3WTVEF7THFGVJEFMSTNJ'
+};
+
+export const BACKUP_RPC_URLS = {
   ethereum: {
-    mainnet: '0x1',
-    sepolia: '0xaa36a7'
+    sepolia: [
+      'https://rpc.sepolia.org',
+      'https://rpc2.sepolia.org',
+      'https://ethereum-sepolia.blockpi.network/v1/rpc/public'
+    ]
   }
 }; 

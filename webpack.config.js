@@ -1,8 +1,7 @@
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-const CopyWebpackPlugin = require('copy-webpack-plugin');
 const webpack = require('webpack');
-require('dotenv').config();
+const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = {
   mode: 'development',
@@ -11,7 +10,7 @@ module.exports = {
     popup: './src/popup/index.js',
     background: './src/background/index.js',
     content: './src/content/index.js',
-    injected: './src/content/injected.js'
+    injected: './src/injected/index.js'
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -21,7 +20,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\.(js|jsx)$/,
+        test: /\.js$/,
         exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
@@ -38,14 +37,14 @@ module.exports = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: './src/popup/index.html',
+      template: './public/popup.html',
       filename: 'popup.html',
       chunks: ['popup']
     }),
-    new CopyWebpackPlugin({
+    new CopyPlugin({
       patterns: [
-        { from: 'public', to: '.' },
-        { from: 'manifest.json', to: '.' }
+        { from: 'public/manifest.json', to: '' },
+        { from: 'public/icons', to: 'icons' }
       ]
     }),
     new webpack.DefinePlugin({
