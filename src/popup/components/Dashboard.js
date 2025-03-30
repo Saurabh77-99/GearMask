@@ -7,6 +7,7 @@ function Dashboard({ navigateTo, walletData }) {
     solana: { address: '', balance: '0' }
   });
   const [selectedChain, setSelectedChain] = useState('ethereum');
+  const [selectedNetwork, setSelectedNetwork] = useState('sepolia'); // Add this line
   const [tokens, setTokens] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -15,7 +16,7 @@ function Dashboard({ navigateTo, walletData }) {
   useEffect(() => {
     loadAccountData();
     loadTransactionHistory();
-  }, [selectedChain]);
+  }, [selectedChain,selectedNetwork]);
 
   const loadAccountData = async () => {
     setIsLoading(true);
@@ -65,24 +66,37 @@ function Dashboard({ navigateTo, walletData }) {
   };
 
   const loadTransactionHistory = async () => {
+    setIsLoading(true);
+    setError(null);
+
     try {
+      setTransactions([]);
+
       const response = await chrome.runtime.sendMessage({
         type: 'GET_TRANSACTIONS',
-        chain: selectedChain
+        chain: selectedChain,
+        network: selectedNetwork || 'sepolia'
       });
       
       if (response && response.success) {
         // Get transactions for the selected chain
-        const chainTransactions = response.transactions[selectedChain] || [];
-        setTransactions(chainTransactions);
+        const txlist = response.transactions|| [];
+        setTransactions(txlist);
+        
+        if (txList.length === 0) {
+          console.log('No transactions found. There might be a network delay, try refreshing later.');
+        }
       } else {
         console.error('Failed to load transactions:', response?.error || 'Unknown error');
-        setTransactions([]);
       }
     } catch (error) {
       console.error('Failed to load transactions:', error);
       setTransactions([]);
     }
+  };
+
+  const handleRefresh = () => {
+    loadTransactionHistory();
   };
 
   const handleSend = () => {
