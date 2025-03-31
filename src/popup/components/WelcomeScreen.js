@@ -6,11 +6,11 @@ function WelcomeScreen({ navigateTo }) {
       <div className="logo-container">
         <img
           src="/images/logo.png"
-          alt="Pedals Up Wallet"
+          alt="GearMask Wallet"
           width="128"
           height="128"
         />
-        <h1>Pedals Up Wallet</h1>
+        <h1>GearMask Wallet</h1>
         <p className="tagline">Your Secure Multi-Chain Wallet</p>
       </div>
 

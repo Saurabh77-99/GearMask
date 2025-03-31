@@ -60,7 +60,44 @@
       
       // Request wallet connection
       async connect() {
-        return this._sendMessage('CONNECT_WALLET');
+        try {
+          // Dispatch connecting event
+          window.dispatchEvent(new Event('pedalsUpWalletConnecting'));
+          
+          // Send connection request
+          window.postMessage({
+            type: 'PEDALS_CONNECT_REQUEST'
+          }, '*');
+          
+          // Wait for response
+          return new Promise((resolve, reject) => {
+            const handleResponse = (event) => {
+              if (event.data.type === 'PEDALS_CONNECT_RESPONSE') {
+                window.removeEventListener('message', handleResponse);
+                
+                if (event.data.connected) {
+                  // Dispatch connected event
+                  window.dispatchEvent(new Event('pedalsUpWalletConnected'));
+                  resolve(event.data);
+                } else {
+                  // Dispatch error event
+                  window.dispatchEvent(new CustomEvent('pedalsUpWalletError', {
+                    detail: { error: event.data.error }
+                  }));
+                  reject(new Error(event.data.error));
+                }
+              }
+            };
+            
+            window.addEventListener('message', handleResponse);
+          });
+        } catch (error) {
+          // Dispatch error event
+          window.dispatchEvent(new CustomEvent('pedalsUpWalletError', {
+            detail: { error: error.message }
+          }));
+          throw error;
+        }
       }
       
       // Get user accounts

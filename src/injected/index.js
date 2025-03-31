@@ -126,10 +126,10 @@ class PedalsUpProvider {
   }
   
   // Also provide PedalsUpWallet for direct access
-  window.PedalsUpWallet = window.ethereum;
+  window.GearMaskWallet = window.ethereum;
   
   // Notify webpage that injection is complete
-  window.dispatchEvent(new Event('PedalsUpWalletInjected'));
+  window.dispatchEvent(new Event('GearMaskInjected'));
   
 const injectScript = () => {
     try {

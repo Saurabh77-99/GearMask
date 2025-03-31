@@ -2,6 +2,7 @@ const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
 const CopyPlugin = require('copy-webpack-plugin');
+const { FallbackFragment } = require('ethers');
 
 module.exports = {
   mode: 'development',
@@ -44,7 +45,8 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         { from: 'public/manifest.json', to: '' },
-        { from: 'public/icons', to: 'icons' }
+        { from: 'public/icons', to: 'icons' },
+        { from: 'public/images', to: 'images' }
       ]
     }),
     new webpack.DefinePlugin({
@@ -56,6 +58,15 @@ module.exports = {
     })
   ],
   resolve: {
-    extensions: ['.js', '.jsx']
+    extensions: ['.js', '.jsx'],
+    fallback:{
+      "crypto": require.resolve("crypto-browserify"),
+      "stream": require.resolve("stream-browserify"),
+      "http": require.resolve("stream-http"),
+      "https": require.resolve("https-browserify"),
+      "os": require.resolve("os-browserify/browser"),
+      "buffer": require.resolve("buffer/"),
+      "url": require.resolve("url/")
+    }
   }
 };

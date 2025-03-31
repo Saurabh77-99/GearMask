@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { NETWORKS } from '../../config';
 
-function Dashboard({ navigateTo, walletData }) {
+function Dashboard({ navigateTo, walletData, selectedChain }) {
   const [accounts, setAccounts] = useState({
     ethereum: { address: '', balance: '0' },
     solana: { address: '', balance: '0' }
   });
-  const [selectedChain, setSelectedChain] = useState('ethereum');
   const [selectedNetwork, setSelectedNetwork] = useState('sepolia'); // Add this line
   const [tokens, setTokens] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [balance, setBalance] = useState('0.0378'); // Default ETH balance
+  const [isLoadingTx, setIsLoadingTx] = useState(false);
 
   useEffect(() => {
     loadAccountData();
     loadTransactionHistory();
+    fetchBalance();
   }, [selectedChain,selectedNetwork]);
 
   const loadAccountData = async () => {
@@ -95,8 +97,25 @@ function Dashboard({ navigateTo, walletData }) {
     }
   };
 
-  const handleRefresh = () => {
-    loadTransactionHistory();
+  const handleRefresh = async () => {
+    try {
+      setIsLoading(true);
+      const response = await chrome.runtime.sendMessage({
+        type: 'GET_BALANCE',
+        chain: selectedChain,
+        address: walletData?.accounts?.ethereum?.address
+      });
+
+      if (response.success) {
+        setBalance(response.balance);
+      } else {
+        console.error('Failed to fetch balance:', response.error);
+      }
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleSend = () => {
@@ -105,6 +124,24 @@ function Dashboard({ navigateTo, walletData }) {
 
   const handleReceive = () => {
     navigateTo('receive');
+  };
+
+  const handleLogout = async () => {
+    try {
+      // Send logout message to background script
+      const response = await chrome.runtime.sendMessage({
+        type: 'LOGOUT'
+      });
+
+      if (response.success) {
+        // Navigate back to welcome screen
+        navigateTo('welcome');
+      } else {
+        console.error('Logout failed:', response.error);
+      }
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
   const formatAddress = (address) => {
@@ -217,6 +254,48 @@ function Dashboard({ navigateTo, walletData }) {
     );
   };
 
+  const fetchBalance = async () => {
+    try {
+      setIsLoading(true);
+      const response = await chrome.runtime.sendMessage({
+        type: 'GET_BALANCE',
+        chain: selectedChain
+      });
+
+      if (response.success) {
+        setBalance(response.balance);
+      } else {
+        console.error('Failed to fetch balance:', response.error);
+      }
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchTransactions = async () => {
+    try {
+      setIsLoadingTx(true);
+      const response = await chrome.runtime.sendMessage({
+        type: 'GET_TRANSACTIONS',
+        chain: selectedChain,
+        address: walletData?.accounts?.ethereum?.address,
+        limit: 3 // Get last 3 transactions
+      });
+
+      if (response.success) {
+        setTransactions(response.transactions);
+      } else {
+        console.error('Failed to fetch transactions:', response.error);
+      }
+    } catch (error) {
+      console.error('Error fetching transactions:', error);
+    } finally {
+      setIsLoadingTx(false);
+    }
+  };
+
   if (error) {
     return (
       <div className="error-message">
@@ -241,12 +320,92 @@ function Dashboard({ navigateTo, walletData }) {
             {renderTokenList()}
           </div>
 
-          <div className="section">
+          <div className="transactions-section">
             <h3>Recent Transactions</h3>
-            {renderTransactionHistory()}
+            {isLoadingTx ? (
+              <div className="loading-spinner" />
+            ) : transactions.length > 0 ? (
+              <div className="transaction-list">
+                {transactions.map((tx, index) => (
+                  <div key={tx.hash} className="transaction-item" style={{
+                    padding: '12px',
+                    borderBottom: index !== transactions.length - 1 ? '1px solid #eee' : 'none',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '14px', color: '#1a73e8' }}>
+                        {tx.type === 'send' ? 'Sent' : 'Received'} ETH
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#666' }}>
+                        {new Date(tx.timestamp).toLocaleDateString()}
+                      </div>
+                    </div>
+                    <div style={{ 
+                      fontSize: '14px',
+                      color: tx.type === 'send' ? '#f44336' : '#4caf50'
+                    }}>
+                      {tx.type === 'send' ? '-' : '+'}{tx.value} ETH
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+                No transactions yet
+              </div>
+            )}
           </div>
         </>
       )}
+
+      <div className="balance-section" style={{ marginBottom: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <h3>Balance: {balance} ETH</h3>
+            <div style={{ color: '#666', fontSize: '14px' }}>
+              {walletData?.accounts?.ethereum?.address?.slice(0, 6)}...
+              {walletData?.accounts?.ethereum?.address?.slice(-4)}
+            </div>
+          </div>
+          <button 
+            className="secondary-button"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            style={{
+              padding: '8px 16px',
+              borderRadius: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '5px'
+            }}
+          >
+            {isLoading ? (
+              <div className="loading-spinner" style={{ width: '16px', height: '16px' }} />
+            ) : (
+              <>
+                <span style={{ transform: 'rotate(90deg)' }}>↻</span>
+                Refresh
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+
+      <button 
+        className="secondary-button"
+        onClick={handleLogout}
+        style={{ 
+          marginTop: '20px',
+          width: '100%',
+          backgroundColor: '#f44336',
+          color: 'white',
+          border: 'none'
+        }}
+      >
+        Logout
+      </button>
 
       <style jsx>{`
         .dashboard {
@@ -356,6 +515,20 @@ function Dashboard({ navigateTo, walletData }) {
         .transaction-status {
           margin-left: 12px;
           color: var(--secondary-color);
+        }
+
+        .balance-section {
+          margin-bottom: 24px;
+        }
+
+        .balance-section h3 {
+          margin-bottom: 16px;
+        }
+
+        .balance-amount {
+          font-size: 24px;
+          font-weight: 500;
+          color: var(--text-color);
         }
       `}</style>
     </div>

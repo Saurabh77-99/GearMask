@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Pedals Up Wallet",
+  "name": "GearMask Wallet",
   "version": "1.0.0",
   "description": "A multi-chain browser extension wallet with seamless React integration",
   "icons": {
@@ -22,6 +22,9 @@
     "tabs",
     "notifications"
   ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
@@ -35,7 +38,7 @@
   ],
   "web_accessible_resources": [
     {
-      "resources": ["injected.js"],
+      "resources": ["injected.js", "content.js"],
       "matches": ["<all_urls>"]
     }
   ]

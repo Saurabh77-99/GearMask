@@ -49,11 +49,11 @@ function UnlockWallet({ navigateTo, setWalletData }) {
       <div className="logo-container">
         <img
           src="/images/logo.png"
-          alt="Pedals Up Wallet"
+          alt="GearMask Wallet"
           width="64"
           height="64"
         />
-        <h1>Pedals Up Wallet</h1>
+        <h1>GearMask Wallet</h1>
       </div>
 
       <div className="form-container">

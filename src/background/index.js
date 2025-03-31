@@ -527,6 +527,15 @@ const sendTransaction = async (transaction, sendResponse) => {
   }
 };
 
+// Handle connection requests
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  if (message.type === 'CONNECT_REQUEST') {
+    handleConnectionRequest(message.origin, sendResponse);
+    return true; // Keep the message channel open for async response
+  }
+  // ... rest of the existing message handlers ...
+});
+
 const handleConnectionRequest = (origin, sendResponse) => {
   if (!state.isUnlocked) {
     sendResponse({ success: false, error: 'Wallet is locked' });
@@ -544,50 +553,61 @@ const handleConnectionRequest = (origin, sendResponse) => {
   }
   
   // Open popup for user approval
-  createPopup('/approve-connection', { origin: origin })
-    .then(popupWindow => {
-      // Store the request details for later use
-      pendingRequests[popupWindow.id] = {
-        type: 'connect',
-        origin: origin,
-        sendResponse: sendResponse
-      };
-    });
+  chrome.windows.create({
+    url: chrome.runtime.getURL('popup.html#/approve-connection') + 
+         '?origin=' + encodeURIComponent(origin),
+    type: 'popup',
+    width: 400,
+    height: 600
+  }, function(popupWindow) {
+    // Store the request details for later use
+    pendingRequests[popupWindow.id] = {
+      type: 'connect',
+      origin: origin,
+      sendResponse: sendResponse
+    };
+  });
 };
 
-// Connection approval management
-// const handleConnectionRequest = (origin, sendResponse) => {
-//   if (!state.isUnlocked) {
-//     sendResponse({ success: false, error: 'Wallet is locked' });
-//     return;
-//   }
-  
-//   // Check if this site is already connected
-//   if (state.connectedSites[origin]) {
-//     sendResponse({
-//       success: true,
-//       accounts: [state.accounts.ethereum.address],
-//       chainId: NETWORKS.ethereum[state.activeNetwork].chainId
-//     });
-//     return;
-//   }
-  
-//   // Open popup for user approval
-//   chrome.windows.create({
-//     url: chrome.runtime.getURL('popup.html#/approve-connection') + 
-//          '?origin=' + encodeURIComponent(origin),
-//     type: 'popup',
-//     width: 400,
-//     height: 600
-//   }, function(popupWindow) {
-//     // Store the request details for later use
-//     pendingRequests[popupWindow.id] = {
-//       type: 'connect',
-//       origin: origin,
-//       sendResponse: sendResponse
-//     };
-//   });
-// };
+// Handle connection approval
+const handleConnectionApproval = async (origin, approved) => {
+  try {
+    const request = pendingRequests[origin];
+    if (!request) {
+      console.error('No pending connection request found for:', origin);
+      return;
+    }
+
+    if (approved) {
+      // Add site to connected sites
+      state.connectedSites[origin] = true;
+      
+      // Send success response
+      request.sendResponse({
+        success: true,
+        accounts: state.accounts,
+        chainId: state.activeChain.chainId
+      });
+    } else {
+      // Send rejection response
+      request.sendResponse({
+        success: false,
+        error: 'Connection rejected by user'
+      });
+    }
+
+    // Clean up
+    delete pendingRequests[origin];
+  } catch (error) {
+    console.error('Error handling connection approval:', error);
+    if (request) {
+      request.sendResponse({
+        success: false,
+        error: error.message
+      });
+    }
+  }
+};
 
 // Transaction approval management
 const handleTransactionRequest = (transaction, origin, sendResponse) => {
@@ -787,11 +807,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       })();
       return true;
 
-    // New handlers for connection approval workflow
-    case 'CONNECT_REQUEST':
-      handleConnectionRequest(message.origin, sendResponse);
-      return true;
-
     case 'CONNECTION_APPROVED':
       const connectRequest = pendingRequests[message.windowId];
       if (connectRequest && connectRequest.type === 'connect') {
@@ -888,6 +903,30 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         sendResponse({ success: true });
       } else {
         sendResponse({ success: false, error: 'Site not connected' });
+      }
+      return true;
+
+    case 'LOGOUT':
+      try {
+        // Reset state
+        state = {
+          wallet: null,
+          activeNetwork: 'ethereum',
+          activeChain: DEFAULT_NETWORKS.ethereum,
+          accounts: {
+            ethereum: { address: '', privateKey: '' },
+            solana: { address: '', secretKey: null }
+          },
+          pendingTransaction: null,
+          isUnlocked: false,
+          connectedSites: {}
+        };
+
+        // Send success response
+        sendResponse({ success: true });
+      } catch (error) {
+        console.error('Error during logout:', error);
+        sendResponse({ success: false, error: error.message });
       }
       return true;
 
