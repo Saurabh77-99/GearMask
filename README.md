@@ -89,10 +89,6 @@ pnpm test
 # Run tests with coverage
 pnpm test --coverage
 ```
-### Contributors
-<a href="https://github.com/Saurabh77-99/GearMask/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=Saurabh77-99/GearMask" />
-</a>
 
 ## Contributing
 
